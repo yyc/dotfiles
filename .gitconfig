@@ -1,0 +1,25 @@
+[user]
+	email = yyc478@gmail.com
+	name = Yuchuan
+[core]
+	excludesfile = /Users/Yuchuan/.gitignore_global
+[push]
+	default = matching
+	default = current
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[filter "lfs"]
+	smudge = git-lfs smudge %f
+	required = true
+	clean = git-lfs clean %f
+[alias]
+	s = status
+	a = add
+	ignore = update-index --skip-worktree
+	unignore = update-index --no-skip-worktree
+	c = commit
+	amend = commit --amend

@@ -1,0 +1,43 @@
+"*":
+  "chrome-color-picker":
+    General:
+      autoColorNames: true
+      autoSetColor: true
+  core:
+    disabledPackages: [
+      "git-blame"
+      "jour-nuit"
+      "markdown-pdf"
+      "linter-rubocop"
+    ]
+    telemetryConsent: "limited"
+    themes: [
+      "one-light-ui"
+      "one-dark-syntax"
+    ]
+  "dark-mode":
+    darkProfile: "one-light-ui one-light-syntax"
+    lightProfile: "one-light-ui one-dark-syntax"
+  editor:
+    invisibles: {}
+  "exception-reporting":
+    userId: "b3c1217e-0998-b887-36a5-cbaa0e14bca0"
+  "git-diff-details":
+    enableSyntaxHighlighting: true
+  "jour-nuit":
+    daySyntaxTheme: "one-dark-syntax"
+    firstTime: true
+    nightSyntaxTheme: "one-light-syntax"
+    nightUITheme: "one-light-ui"
+    sunrise: 9
+    sunset: 23
+  "markdown-preview":
+    breakOnSingleNewline: true
+  minimap: {}
+  "one-light-ui":
+    tabSizing: "Even"
+  "tidy-tabs":
+    accessedThreshold: 10
+    runOnSave: true
+  welcome:
+    showOnStartup: false
