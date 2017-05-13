@@ -1,156 +1,177 @@
-# Monkey Patching Enums in Rails 4 to use the _prefix and _suffix options in Rails 5 enums
-# Prof. Ben please don't murder me
-# NOTE:: Initializers are run in lexicographical order, make sure this is run first
-# This is the Rails 4.2 definition of Enum, with just the _suffix and _prefix options added
-# Source: https://github.com/rails/rails/blob/4-2-stable/activerecord/lib/active_record/enum.rb
-# Additions: https://github.com/rails/rails/blob/5-0-stable/activerecord/lib/active_record/enum.rb
-require 'active_record/enum'
-# ActiveRecord::Enum.prepend CoreExtensions::ActiveRecord::Enum
-#
-# module ActiveRecord
-#   module Enum
-#     prepend CoreExtensions::ActiveRecord::Enum
-#   end
-# end
-#
-# print ActiveRecord::Enum.methods
+require 'test_helper'
+class CheckcallsTest < ActiveSupport::TestCase
+  NUM_HISTORY_ITEMS = 20
 
-ActiveRecord::Enum.module_eval do
-  def self.extended(base) # :nodoc:
-    base.class_attribute(:defined_enums, instance_writer: false)
-    base.defined_enums = {}
+  include Rack::Test::Methods
+  def app
+    Rails.application
   end
-
-  def inherited(base) # :nodoc:
-    base.defined_enums = defined_enums.deep_dup
-    super
+  setup do
+    person = admin_befriender(:befriender_harrypotter)
+    @group = person.matching_groups.first
   end
-
-  def enum(definitions)
-    klass = self
-    enum_prefix = definitions.delete(:_prefix)
-    enum_suffix = definitions.delete(:_suffix)
-    definitions.each do |name, values|
-      # statuses = { }
-      enum_values = ActiveSupport::HashWithIndifferentAccess.new
-      name        = name.to_sym
-
-      # def self.statuses statuses end
-      detect_enum_conflict!(name, name.to_s.pluralize, true)
-      klass.singleton_class.send(:define_method, name.to_s.pluralize) { enum_values }
-
-      detect_enum_conflict!(name, name)
-      detect_enum_conflict!(name, "#{name}=")
-
-      _enum_methods_module.module_eval do
-        # def status=(value) self[:status] = statuses[value] end
-        klass.send(:detect_enum_conflict!, name, "#{name}=")
-        define_method("#{name}=") { |value|
-          if enum_values.has_key?(value) || value.blank?
-            self[name] = enum_values[value]
-          elsif enum_values.has_value?(value)
-            # Assigning a value directly is not a end-user feature, hence it's not documented.
-            # This is used internally to make building objects from the generated scopes work
-            # as expected, i.e. +Conversation.archived.build.archived?+ should be true.
-            self[name] = value
-          else
-            raise ArgumentError, "'#{value}' is not a valid #{name}"
-          end
-        }
-
-        # def status() statuses.key self[:status] end
-        klass.send(:detect_enum_conflict!, name, name)
-        define_method(name) { enum_values.key self[name] }
-
-        # def status_before_type_cast() statuses.key self[:status] end
-        klass.send(:detect_enum_conflict!, name, "#{name}_before_type_cast")
-        define_method("#{name}_before_type_cast") { enum_values.key self[name] }
-
-        pairs = values.respond_to?(:each_pair) ? values.each_pair : values.each_with_index
-        pairs.each do |value, i|
-          enum_values[value] = i
-          if enum_prefix == true
-            prefix = "#{name}_"
-          elsif enum_prefix
-            prefix = "#{enum_prefix}_"
-          end
-          if enum_suffix == true
-            suffix = "_#{name}"
-          elsif enum_suffix
-            suffix = "_#{enum_suffix}"
-          end
-
-          value_method_name = "#{prefix}#{value}#{suffix}"
-          enum_values[value] = i
-
-          # def active?() status == 0 end
-          klass.send(:detect_enum_conflict!, name, "#{value_method_name}?")
-          define_method("#{value_method_name}?") { self[name] == i }
-
-          # def active!() update! status: :active end
-          klass.send(:detect_enum_conflict!, name, "#{value_method_name}!")
-          define_method("#{value_method_name}!") { update! name => value }
-
-          # scope :active, -> { where status: 0 }
-          klass.send(:detect_enum_conflict!, name, value_method_name, true)
-          klass.scope value_method_name, -> { klass.where name => i }
-        end
-      end
-      defined_enums[name.to_s] = enum_values
+  it 'Should reject unauthenticated inputs' do
+    get "/api/groups/#{@group.id}/checkcalls"
+    last_response.unauthorized?.must_equal true
+  end
+  it 'Should give checkcalls history' do
+    set_auth_header
+    get "/api/groups/#{@group.id}/checkcalls"
+    last_response.unauthorized?.must_equal false, '401 Unauthorized'
+    last_response.ok?.must_equal true, 'Response not OK'
+    json_response = JSON.parse(last_response.body)
+    json_response.must_be_kind_of Array, 'Response is not an array'
+    json_response.length.wont_equal 0, 'Response is empty array'
+    json_response.each do |group|
+      group.must_include 'id'
+      group.must_include 'date'
+      group.must_include 'checkcall_type'
+      group.must_include 'is_approved'
     end
   end
-
-  private
-    def _enum_methods_module
-      @_enum_methods_module ||= begin
-        mod = Module.new do
-          private
-            def save_changed_attribute(attr_name, old)
-              if (mapping = self.class.defined_enums[attr_name.to_s])
-                value = _read_attribute(attr_name)
-                if attribute_changed?(attr_name)
-                  if mapping[old] == value
-                    clear_attribute_changes([attr_name])
-                  end
-                else
-                  if old != value
-                    set_attribute_was(attr_name, mapping.key(old))
-                  end
-                end
-              else
-                super
-              end
-            end
-        end
-        include mod
-        mod
+  it 'should paginate checkcalls history' do
+    set_auth_header
+    seed_checkcalls(@group)
+    get "/api/groups/#{@group.id}/checkcalls"
+    json_response = JSON.parse(last_response.body)
+    json_response.length.must_be(:<=, NUM_HISTORY_ITEMS)
+    prev_response = last_response
+    get "/api/groups/#{@group.id}/checkcalls?offset=#{json_response.length}"
+    json_2_response = JSON.parse(last_response.body)
+    json_2_response.wont_equal(json_response)
+    last_response.wont_equal(prev_response)
+  end
+  it 'should return detailed checkcall information' do
+    set_auth_header
+    checkcall = @group.checkcalls.first
+    checkcall.wont_be_nil
+    get "/api/groups/#{@group.id}/checkcalls/#{checkcall.id}"
+    last_response.unauthorized?.must_equal false, '401 Unauthorized'
+    last_response.ok?.must_equal true, 'Response not OK'
+    response = JSON.parse(last_response.body)
+    response.must_be_kind_of Hash, 'Response is not an hash'
+    response.must_include 'date'
+    response['group_remarks'].must_equal checkcall.remarks
+    [response['befrienders'], response['staff']].each do |collection|
+      collection.each do |person|
+        person.must_include 'id'
+        person.must_include 'name'
       end
     end
+    response['befriendees'].each do |person|
+      person.must_include 'id'
+      person.must_include 'name'
+      person.must_include 'status'
+    end
+  end
+  it 'should successfully create checkcalls' do
+    set_auth_header
+    person = admin_befriender(:befriender_harrypotter)
+    get "/api/groups/#{@group.id}"
+    response = JSON.parse(last_response.body)
+    set_auth_header
+    post_json "/api/groups/#{@group.id}/checkcalls", {
+      date: Time.now,
+      befriendees: response['befriendees'].map do |person|
+          {
+            id: person['id'],
+            status: ['Not In', 'Visited'].sample,
+            remarks: 'Person test comment'
+          }
+      end,
+      befrienders: response['befrienders'].map do |person|
+        person['id']
+      end,
+      staff: response['staff'].map do |person|
+        person['id']
+      end,
+      type: 'Home Visit',
+      remarks: 'Hello yes this is test'
+    }
+    last_response.unauthorized?.must_equal false, '401 Unauthorized'
+    last_response.created?.must_equal true, "Response not OK, #{last_response.status}"
+    response = Integer(last_response.body)
+    response.must_be_kind_of Integer, 'Response is not an integer'
+    checkcall = Operation::Checkcall.find(response)
+    checkcall.wont_be_nil 'Checkcall was not created!'
+    checkcall.creator.username.must_equal users(:user_harrypotter).username
+  end
+  # For some bizarre reason the route doesn't work in testing but it does in production
+  # it "should successfully modify checkcalls" do
+  #   set_auth_header
+  #   @checkcall = @group.checkcalls.new
+  #   @checkcall.checkcall_date = Time.now - 86400
+  #   check_time = @checkcall.checkcall_date
+  #   @checkcall.checkcall_type = 1
+  #   @checkcall.approval_date = nil
+  #   @checkcall.approver_id = nil
+  #   @checkcall.save!
+  #   @checkcall.befrienders.length.must_equal 0
+  #   @checkcall.befriendees.length.must_equal 0
+  #   @checkcall.staff.length.must_equal 0
+  #   person = admin_befriender(:befriender_harrypotter)
+  #   puts "Posting to /api/groups/#{@group.id}/checkcalls/#{@checkcall.id}"
+  #   post_json "/api/groups/#{@group.id}/checkcalls/#{@checkcall.id}", {
+  #     date: Time.now,
+  #     befriendees: @group.befriendees do |person|
+  #         {
+  #           id: person.id,
+  #           status: ['Not In', 'Visited'].sample
+  #         }
+  #       end,
+  #     befrienders: @group.befrienders do |person|
+  #       person.id
+  #     end,
+  #     staff: @group.staff.map do |person|
+  #       person.id
+  #     end,
+  #     type: 1,
+  #     remarks: "Hello yes this is test"
+  #   }
+  #   last_response.unauthorized?.must_equal false, "401 Unauthorized"
+  #   last_response.created?.must_equal true, "Response not OK, #{last_response.status}"
+  #   response = Integer(last_response.body)
+  #   response.must_be_kind_of Integer, "Response is not an integer"
+  #   @checkcall.reload
+  #   @checkall.checkcall_date.wont_equal check_time
+  #   @checkcall.befriendees.length.must_equal @group.befriendees.length
+  #   @checkcall.befrienders.length.must_equal @group.befrienders.length
+  #   @checkcall.staff.length.must_equal @group.staff.length
+  # end
+  def seed_checkcalls(mg)
+    Operation::Checkcall.transaction do
+      id = mg.id
+      region_id = mg.region_id
+      matching_records = mg.matching_records
+      bfr_ids = matching_records.where { item_type == 'Admin::Befriender' }.pluck(:item_id)
+      bfe_ids = matching_records.where { item_type == 'Admin::Befriendee' }.pluck(:item_id)
 
-    ENUM_CONFLICT_MESSAGE = \
-      "You tried to define an enum named \"%{enum}\" on the model \"%{klass}\", but " \
-      "this will generate a %{type} method \"%{method}\", which is already defined " \
-      "by %{source}."
+      num_checkcalls = NUM_HISTORY_ITEMS + rand(10)
+      num_checkcalls.times do
+          cc = Operation::Checkcall.new(matching_group_id: id,
+          checkcall_type: Operation::Checkcall.checkcall_types.keys.sample,
+          checkcall_date: 3.months.ago,
+          creator_id: users(:user_one).id)
 
-    def detect_enum_conflict!(enum_name, method_name, klass_method = false)
-      if klass_method && dangerous_class_method?(method_name)
-        raise_conflict_error(enum_name, method_name, type: 'class')
-      elsif !klass_method && dangerous_attribute_method?(method_name)
-        raise_conflict_error(enum_name, method_name)
-      elsif !klass_method && method_defined_within?(method_name, _enum_methods_module, Module)
-        warn "You're overriding an existing method (#{method_name}) with your new enum definition! I hope you know what you're doing!"
-        # suka suka declare new enums. Hopefully does not break things
-        # raise_conflict_error(enum_name, method_name, source: 'another enum')
+          cc.save!
+          num_bfrs = rand(bfr_ids.length)
+          num_bfes = rand(bfe_ids.length)
+          bfr_ids_random = bfr_ids.sort { rand - 0.5 }[0..num_bfrs]
+          bfe_ids_random = bfe_ids.sort { rand - 0.5 }[0..num_bfes]
+
+          bfr_ids_random.each do |id|
+            cc.checkcall_records.build(person_id: id,
+              person_type: 'Admin::Befriender',
+              region_id: region_id)
+          end
+          bfe_ids_random.each do |id|
+            cc.checkcall_records.build(person_id: id,
+              person_type: 'Admin::Befriendee',
+              region_id: region_id)
+          end
+
+          cc.save!
       end
     end
-
-    def raise_conflict_error(enum_name, method_name, type: 'instance', source: 'Active Record')
-      raise ArgumentError, ENUM_CONFLICT_MESSAGE % {
-        enum: enum_name,
-        klass: self.name,
-        type: type,
-        method: method_name,
-        source: source
-      }
-    end
+  end
 end

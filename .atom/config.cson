@@ -8,7 +8,6 @@
       "git-blame"
       "jour-nuit"
       "markdown-pdf"
-      "linter-rubocop"
     ]
     telemetryConsent: "limited"
     themes: [
@@ -31,6 +30,9 @@
     nightUITheme: "one-light-ui"
     sunrise: 9
     sunset: 23
+  "linter-eslint": {}
+  "linter-rubocop":
+    command: "/Users/Yuchuan/.rvm/gems/ruby-2.1.6/wrappers/rubocop"
   "markdown-preview":
     breakOnSingleNewline: true
   minimap: {}

@@ -23,3 +23,9 @@
 	unignore = update-index --no-skip-worktree
 	c = commit
 	amend = commit --amend
+[diff]
+	tool = opendiff
+[merge]
+	tool = opendiff
+[difftool]
+	prompt = false

@@ -1,2 +1,0 @@
-'atom-text-editor':
-  'ctrl-alt-shift-w': 'tidy-tabs:remove-stale-tabs'
