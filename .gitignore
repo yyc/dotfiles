@@ -1,2 +1,3 @@
-.atom/packages/
-.atom/storage/
+**/.DS_Store
+atom/packages/
+atom/storage/
