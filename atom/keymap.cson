@@ -39,3 +39,5 @@
 '.platform-darwin atom-text-editor':
   'alt-cmd-down': 'window:focus-next-pane'
   'alt-cmd-up': 'window:focus-previous-pane'
+'.workspace':
+  'cmd-g': 'github:toggle-git-tab'
