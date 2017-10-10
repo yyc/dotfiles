@@ -1,4 +1,10 @@
 "*":
+  "atom-beautify":
+    c:
+      beautify_on_save: true
+      configPath: "/Users/Yuchuan/dotfiles/uncrustify.cfg"
+    general:
+      _analyticsUserId: "8fe2613a-7c1a-4e6e-a18d-9a00089cf710"
   "chrome-color-picker":
     General:
       autoColorNames: true
