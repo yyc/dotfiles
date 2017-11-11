@@ -3,8 +3,15 @@
     c:
       beautify_on_save: true
       configPath: "/Users/Yuchuan/dotfiles/uncrustify.cfg"
+    cs:
+      beautify_on_save: true
+      configPath: "/Users/Yuchuan/dotfiles/uncrustify.cfg"
     general:
       _analyticsUserId: "8fe2613a-7c1a-4e6e-a18d-9a00089cf710"
+  "autocomplete-plus":
+    confirmCompletion: "tab"
+    defaultProvider: "Symbol"
+    enableAutoConfirmSingleSuggestion: false
   "chrome-color-picker":
     General:
       autoColorNames: true
@@ -17,6 +24,16 @@
       "github"
     ]
     excludeVcsIgnoredPaths: false
+    ignoredNames: [
+      ".git"
+      ".hg"
+      ".svn"
+      ".DS_Store"
+      "._*"
+      "Thumbs.db"
+      "desktop.ini"
+      "*.meta"
+    ]
     telemetryConsent: "limited"
     themes: [
       "one-light-ui"
@@ -43,6 +60,7 @@
     command: "/Users/Yuchuan/.rvm/gems/ruby-2.1.6/wrappers/rubocop"
   "linter-ui-default":
     panelHeight: 69
+    showPanel: true
   "markdown-preview":
     breakOnSingleNewline: true
   minimap:
@@ -50,6 +68,13 @@
       "git-diff": true
       "git-diffDecorationsZIndex": 0
   "minimap-git-diff": {}
+  "omnisharp-atom":
+    altGotoDefinition: true
+    autoAdjustTreeView: true
+    enableAdvancedFileNew: true
+    enhancedHighlighting19: true
+    signatureHelp: true
+    wantMetadata: true
   "one-light-ui":
     tabSizing: "Even"
   "prettier-atom":
@@ -59,5 +84,9 @@
   "tidy-tabs":
     accessedThreshold: 10
     runOnSave: true
+  "tree-view":
+    hideIgnoredNames: true
   welcome:
     showOnStartup: false
+  whitespace:
+    ensureSingleTrailingNewline: false
