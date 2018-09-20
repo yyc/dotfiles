@@ -183,6 +183,8 @@ declare -a FILES_TO_SYMLINK=(
   # 'shell/gemrc'
   # 'shell/inputrc'
   'fish'
+  '.tmux.conf.local'
+  '.tmux.conf'
 
   'gitconfig'
   'gitignore_global'
