@@ -3,6 +3,7 @@
     c:
       beautify_on_save: true
       configPath: "/Users/Yuchuan/dotfiles/uncrustify.cfg"
+      disabled: true
     cs:
       beautify_on_save: true
       configPath: "/Users/Yuchuan/dotfiles/uncrustify.cfg"
@@ -22,6 +23,7 @@
       "jour-nuit"
       "markdown-pdf"
       "github"
+      "omnisharp-atom"
     ]
     excludeVcsIgnoredPaths: false
     ignoredNames: [
@@ -46,6 +48,10 @@
     invisibles: {}
   "exception-reporting":
     userId: "b3c1217e-0998-b887-36a5-cbaa0e14bca0"
+  "fuzzy-finder":
+    ignoredNames: [
+      "**/node_modules/*"
+    ]
   "git-diff-details":
     enableSyntaxHighlighting: true
   "jour-nuit":
@@ -60,7 +66,6 @@
     command: "/Users/Yuchuan/.rvm/gems/ruby-2.1.6/wrappers/rubocop"
   "linter-ui-default":
     panelHeight: 69
-    showPanel: true
   "markdown-preview":
     breakOnSingleNewline: true
   minimap:
@@ -79,7 +84,6 @@
     tabSizing: "Even"
   "prettier-atom":
     formatOnSaveOptions:
-      enabled: true
       showInStatusBar: true
   "tidy-tabs":
     accessedThreshold: 10
